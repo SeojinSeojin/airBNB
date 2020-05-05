@@ -25,11 +25,11 @@ class User(AbstractUser):
     )
 
     CURRENCY_USD = "usd"
-    CURRENCY_KOREAN = "krw"
+    CURRENCY_KRW = "krw"
 
     CURRENCY_CHOICES = (
         (CURRENCY_USD, "usd"),
-        (CURRENCY_KOREAN, "krw"),
+        (CURRENCY_KRW, "krw"),
     )
 
     avatar = models.ImageField(upload_to="avatars", blank=True)
