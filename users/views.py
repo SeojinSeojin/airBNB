@@ -78,7 +78,7 @@ def github_callback(request):
         code = request.GET.get("code", None)
         if code is not None:
             token_request = requests.post(
-                f"https://github.com/login/oauth/access_token?cliend_id={client_id}&client_secret={client_secret}&code={code}", headers={"Accept": "application/json"},)
+                f"https://github.com/login/oauth/access_token?client_id={client_id}&client_secret={client_secret}&code={code}", headers={"Accept": "application/json"},)
             token_json = token_request.json()
             error = token_json.get("error", None)
             if error is not None:
