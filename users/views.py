@@ -1,11 +1,12 @@
 import os
 import requests
 from django.views import View
-from django.views.generic import FormView
+from django.views.generic import FormView, DetailView
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect, reverse
 from django.core.files.base import ContentFile
 from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
 from . import forms, models
 # Create your views here.
 
@@ -22,10 +23,12 @@ class LoginView(FormView):
         user = authenticate(self.request, username=email, password=password)
         if user is not None:
             login(self.request, user)
+            messages.success(request, f"Welcome back {user.first_name}")
         return super().form_valid(form)
 
 
 def log_out(request):
+    messages.info(request, "See you later~")
     logout(request)
     return redirect(reverse("core:home"))
 
@@ -42,6 +45,7 @@ class SignupView(FormView):
         user = authenticate(self.request, username=email, password=password)
         if user is not None:
             login(self.request, user)
+            messages.success(request, f"Welcome {user.first_name}")
         user.verify_email()
         return super().form_valid(form)
 
@@ -106,6 +110,7 @@ def github_callback(request):
                         user.save()
 
                     login(request, user)
+                    messages.success(request, f"Welcome {user.first_name}")
                     return redirect(reverse("core:home"))
                 else:
                     raise GithubException()
@@ -170,8 +175,20 @@ def kakao_callback(request):
         if profile_image is not None:
             photo_request = requests.get(profile_image)
             user.avatar.save(f"{nickname}-avatar",
-                                ContentFile(photo_request.content))
+                             ContentFile(photo_request.content))
         login(request, user)
+        messages.success(request, f"Welcome {user.first_name}")
         return redirect(reverse("core:home"))
     except KakaoException:
         return redirect(reverse("users:login"))
+
+
+class UserProfileView(DetailView):
+
+    model = models.User
+    context_object_name = "user_obj"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["hello"] = "Hello!"
+        return context
