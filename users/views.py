@@ -17,7 +17,6 @@ class LoginView(mixins.LoggedOutOnlyView, FormView):
 
     template_name = "users/login.html"
     form_class = forms.LoginForm
-    success_url = reverse_lazy("core:home")
 
     def form_valid(self, form):
         email = form.cleaned_data.get("email")
@@ -228,7 +227,7 @@ class UpdateProfileView(mixins.EmailLoginOnlyView, mixins.LoggedInOnlyView, Succ
         return form
 
 
-class UpdatePasswordView(SuccessMessageMixin, PasswordChangeView):
+class UpdatePasswordView(mixins.LoggedInOnlyView, SuccessMessageMixin, PasswordChangeView):
 
     template_name = "users/update_password.html"
     success_message = "Password Updated"

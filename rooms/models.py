@@ -53,6 +53,19 @@ class HouseRule(AbstractItem):
         verbose_name = "House Rules"
 
 
+class Photo(core_models.TimeStampedModel):
+
+    """ Photo Model Definition """
+
+    caption = models.CharField(max_length=80)
+    file = models.ImageField(upload_to="room_photos")
+    room = models.ForeignKey(
+        "Room", related_name="photos", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.caption
+
+
 class Room(core_models.TimeStampedModel):
 
     """ Room Model Definition """
@@ -99,22 +112,11 @@ class Room(core_models.TimeStampedModel):
         for review in all_reviews:
             all_ratings += review.rating_average()
         return round(all_ratings / len(all_reviews), 2)
-    
+
     def first_photo(self):
-        photo, = self.photos.all()[:1]
-        return photo.file.url
+        photo = self.photos.all()[:1]
+        return photo[0].file.url
 
-
-class Photo(core_models.TimeStampedModel):
-
-    """ Photo Model Definition """
-
-    caption = models.CharField(max_length=80)
-    file = models.ImageField(upload_to="room_photos")
-    room = models.ForeignKey(
-        Room, related_name="photos", on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.caption
-
-
+    def get_next_four_photos(self):
+        photos = self.photos.all()[1:5]
+        return photos
