@@ -1,17 +1,19 @@
 import os
 import requests
 from django.views import View
-from django.views.generic import FormView, DetailView
+from django.contrib.auth.views import PasswordChangeView
+from django.views.generic import FormView, DetailView, UpdateView
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect, reverse
 from django.core.files.base import ContentFile
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib import messages
-from . import forms, models
+from . import forms, models, mixins
 # Create your views here.
 
 
-class LoginView(FormView):
+class LoginView(mixins.LoggedOutOnlyView, FormView):
 
     template_name = "users/login.html"
     form_class = forms.LoginForm
@@ -26,6 +28,13 @@ class LoginView(FormView):
             messages.success(request, f"Welcome back {user.first_name}")
         return super().form_valid(form)
 
+    def get_success_url(self):
+        next_arg = self.request.GET.get("next")
+        if next_arg is not None:
+            return next_arg
+        else:
+            return reverse("core:home")
+
 
 def log_out(request):
     messages.info(request, "See you later~")
@@ -33,7 +42,7 @@ def log_out(request):
     return redirect(reverse("core:home"))
 
 
-class SignupView(FormView):
+class SignupView(mixins.LoggedOutOnlyView, FormView):
     template_name = "users/signup.html"
     form_class = forms.SignUpForm
     success_url = reverse_lazy("core:home")
@@ -183,12 +192,57 @@ def kakao_callback(request):
         return redirect(reverse("users:login"))
 
 
-class UserProfileView(DetailView):
+class UserProfileView(mixins.LoggedInOnlyView, DetailView):
 
     model = models.User
     context_object_name = "user_obj"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["hello"] = "Hello!"
-        return context
+
+class UpdateProfileView(mixins.EmailLoginOnlyView, mixins.LoggedInOnlyView, SuccessMessageMixin, UpdateView):
+
+    model = models.User
+    template_name = "users/update_profile.html"
+    fields = (
+        "first_name",
+        "last_name",
+        "avatar",
+        "gender",
+        "bio",
+        "birthdate",
+        "language",
+        "currency",
+    )
+
+    success_message = "Profile Updated"
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class=form_class)
+        form.fields["first_name"].widget.attrs = {"placeholder": "First name"}
+        form.fields["last_name"].widget.attrs = {"placeholder": "Last name"}
+        form.fields["bio"].widget.attrs = {"placeholder": "Bio"}
+        form.fields["birthdate"].widget.attrs = {"placeholder": "Birthdate"}
+        form.fields["first_name"].widget.attrs = {"placeholder": "First name"}
+        return form
+
+
+class UpdatePasswordView(SuccessMessageMixin, PasswordChangeView):
+
+    template_name = "users/update_password.html"
+    success_message = "Password Updated"
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class=form_class)
+        form.fields["old_password"].widget.attrs = {
+            "placeholder": "Current password"}
+        form.fields["new_password1"].widget.attrs = {
+            "placeholder": "New password"}
+        form.fields["new_password2"].widget.attrs = {
+            "placeholder": "Confirm new password"
+        }
+        return form
+
+    def get_success_url(self):
+        return self.request.user.get_absolute_url()
