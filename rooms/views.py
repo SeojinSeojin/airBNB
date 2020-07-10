@@ -1,6 +1,8 @@
 from django.http import Http404
 from django.utils import timezone
 from django.views.generic import ListView, DetailView, UpdateView, FormView
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.shortcuts import render, redirect, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -194,6 +196,10 @@ class CreateRoomView(user_mixin.LoggedInOnlyView, FormView):
 
     form_class = forms.CreateRoomForm
     template_name = "rooms/room_create.html"
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(CreateRoomView, self).dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         room = form.save()
